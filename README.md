@@ -2,7 +2,7 @@
 
 **Intent classification + priority recommendation for enterprise IT service desk tickets.**
 
-At a global helpdesk (the scenario used here mirrors a TCS-style enterprise service desk), employees raise Incidents, Service Requests, Change Requests (RFCs), and Admin requests by browsing a service catalog with 100+ items organized in a category tree. IntelliDesk replaces the browsing step: an employee types their request in plain English, and a trained model recommends the correct catalog item and priority level directly - with graceful fallback to a short pick-list when the request is genuinely ambiguous, rather than guessing.
+At a global helpdesk (the scenario used here mirrors a TCS-style enterprise service desk), employees raise Incidents, Service Requests, Change Requests (RFCs), and Admin requests by browsing a service catalog with 100+ items organized in a category tree. DeskPilot replaces the browsing step: an employee types their request in plain English, and a trained model recommends the correct catalog item and priority level directly - with graceful fallback to a short pick-list when the request is genuinely ambiguous, rather than guessing.
 
 ```
 "need Adobe Photoshop installed on my laptop"
@@ -15,8 +15,6 @@ At a global helpdesk (the scenario used here mirrors a TCS-style enterprise serv
 ```
 
 **Live demo:** `frontend/index.html` - runs a real, trained model entirely in your browser (no server needed to try it; see [Demo](#demo)).
-
----
 
 ## Why this project exists
 
@@ -61,7 +59,7 @@ This was built as an end-to-end portfolio piece to demonstrate applied ML/DL jud
 | Classical ML - Logistic Regression (cascade) | priority (4-way) | 53.7% | 0.503 | text + department + role + predicted category |
 | Deep learning - multi-task net (joint) | priority (4-way) | 54.6% | 0.502 | shared representation, joint loss |
 
-**The honest, non-obvious finding:** the deep learning model does not beat the tuned classical model on category classification, and only marginally edges it on priority. On ~4,500 training examples with a fairly clean, keyword-rich vocabulary, a linear model with good features is competitive with a neural network - this project's dataset didn't need deep learning to solve the primary task well. That's a real, defensible finding, documented rather than hidden (see `docs/INTERVIEW_PREP.md` for how to talk about this and when the answer would flip).
+**The honest, non-obvious finding:** the deep learning model does not beat the tuned classical model on category classification, and only marginally edges it on priority. On ~4,500 training examples with a fairly clean, keyword-rich vocabulary, a linear model with good features is competitive with a neural network - this project's dataset didn't need deep learning to solve the primary task well.
 
 **Why priority tops out around 0.50 macro-F1, not higher:** priority labels are *intentionally* not a deterministic function of the input in this dataset - they depend on category base-rate plus requester seniority plus department plus genuine random business variation (a Director's routine software request can outrank an Associate's minor incident, but not always). This mirrors reality: two humans given the same ticket wouldn't always agree on priority either. The ceiling here is a property of the label-generating process, not a modeling failure - see the confidence distribution below for how the system compensates.
 
@@ -79,7 +77,7 @@ At the production threshold (0.45), only 0.6% of the clean test set routes to th
 
 ## Demo
 
-Open `frontend/index.html` in any browser. It embeds the actual exported TF-IDF + Logistic Regression weights and reimplements TF-IDF vectorization + the linear layer + softmax in vanilla JS - verified to match `sklearn`'s `predict_proba` output exactly (see `src/export_web_model.py` and the verification harness referenced in `docs/INTERVIEW_PREP.md`). It is a real inference engine, not a UI mockup.
+Open `frontend/index.html` in any browser. It embeds the actual exported TF-IDF + Logistic Regression weights and reimplements TF-IDF vectorization + the linear layer + softmax in vanilla JS - verified to match `sklearn`'s `predict_proba` output exactly (see `src/export_web_model.py`). It is a real inference engine, not a UI mockup.
 
 ## Running the full system
 
@@ -105,8 +103,8 @@ uvicorn app:app --reload --port 8000
 # POST /predict  {"query_text": "...", "department": "...", "requester_role": "..."}
 
 # or, containerized:
-docker build -t intellidesk .
-docker run -p 8000:8000 intellidesk
+docker build -t deskpilot .
+docker run -p 8000:8000 deskpilot
 ```
 
 > **Windows users:** the commands above are written one-per-line specifically so they work
@@ -142,9 +140,9 @@ scripts/
   drift_check.py                # chi-square test: recent predictions vs training distribution
 models/                        # trained artifacts + all results JSON
 docs/
+  ARCHITECTURE.md, FLOW.md, FUNCTIONAL_SPEC.md, TEST_SCENARIOS.md, CODEBASE_GUIDE.md
   training_curves.png, confusion_matrix.png
-  pytorch_reference_architecture.py   # production-scale architecture (see below)
-  INTERVIEW_PREP.md
+  pytorch_reference_architecture.py   # production-scale architecture
 ```
 
 ## Appending new data / retraining
@@ -165,11 +163,11 @@ Running `generate_dataset.py` on a different machine can produce a slightly diff
 
 ## Design decisions worth highlighting
 
-- **Cascade (classical) vs. joint multi-task (DL) architectures, built side by side.** The classical pipeline predicts category, then feeds that prediction into a second model for priority. The neural net predicts both from one shared representation, trained jointly with a weighted loss. This is a real architectural fork worth being able to explain, not just a modeling afterthought.
+- **Cascade (classical) vs. joint multi-task (DL) architectures, built side by side.** The classical pipeline predicts category, then feeds that prediction into a second model for priority. The neural net predicts both from one shared representation, trained jointly with a weighted loss. This is a real architectural fork, not just a modeling afterthought.
 - **Production model selection wasn't purely "highest validation score."** Linear SVC edged out Logistic Regression on category by 0.3 macro-F1 points (statistically noise on a 956-row validation set) but doesn't expose calibrated probabilities. Logistic Regression was deployed instead, deliberately, because the confidence-threshold fallback UX depends on real probabilities - see `src/train_classical.py`.
-- **Label noise and class imbalance are deliberately part of the dataset**, not incidental. A first version of the generator produced a trivially separable, perfectly-labeled dataset that hit 100% test accuracy - a red flag, not a win - so realistic ~4.5% mislabeling between confusable category pairs (e.g. Software Installation vs. Software License) and ~10x class imbalance were added back in. See `docs/INTERVIEW_PREP.md` for the full story.
+- **Label noise and class imbalance are deliberately part of the dataset**, not incidental. A first version of the generator produced a trivially separable, perfectly-labeled dataset that hit 100% test accuracy - a red flag, not a win - so realistic ~4.5% mislabeling between confusable category pairs (e.g. Software Installation vs. Software License) and ~10x class imbalance were added back in.
 - **Reproducibility bug, found and fixed during development:** the first training runs of the neural net gave different results each run despite a fixed seed - traced to an unseeded `np.random.permutation` call for epoch shuffling, sitting alongside a properly-seeded `Generator` used for dropout. Fixed by seeding both sources of randomness explicitly.
-- **A cross-environment bug, found because someone else ran the code on different data.** The category model had a safeguard - if the top validation performer lacks `predict_proba` (as `LinearSVC` does), fall back to the best candidate that has it, since the confidence-threshold UX needs real probabilities. That safeguard was only applied to the category head, not the priority head - an oversight invisible on my machine because logistic regression happened to win priority validation there. On a different machine, with a different dependency version and a very slightly different generated dataset, `LinearSVC` won priority validation instead and got saved as the production model - which would have crashed the very first `/predict` call with `AttributeError: 'LinearSVC' object has no attribute 'predict_proba'`. Fixed by refactoring the safeguard into one shared function (`select_serving_pipeline`) applied identically to both heads, with a loud `RuntimeError` (not a silent skip) if no probability-capable candidate is close enough to deploy. This is a good "tell me about a bug you shipped" story precisely because it's about a missing safeguard on one of two *symmetric* code paths, not a one-off typo - the kind of bug that survives code review because each path looks locally correct.
+- **A cross-environment bug, found because someone else ran the code on different data.** The category model had a safeguard - if the top validation performer lacks `predict_proba` (as `LinearSVC` does), fall back to the best candidate that has it, since the confidence-threshold UX needs real probabilities. That safeguard was only applied to the category head, not the priority head - an oversight invisible on the original machine because logistic regression happened to win priority validation there. On a different machine, with a different dependency version and a very slightly different generated dataset, `LinearSVC` won priority validation instead and got saved as the production model - which would have crashed the very first `/predict` call with `AttributeError: 'LinearSVC' object has no attribute 'predict_proba'`. Fixed by refactoring the safeguard into one shared function (`select_serving_pipeline`) applied identically to both heads, with a loud `RuntimeError` (not a silent skip) if no probability-capable candidate is close enough to deploy.
 
 ## Limitations & future work
 
@@ -177,9 +175,3 @@ Running `generate_dataset.py` on a different machine can produce a slightly diff
 - **Semantic search extension.** The retrieval baseline (TF-IDF centroid) is a natural stepping stone to a proper embedding-based nearest-neighbor lookup against catalog item descriptions (a lightweight RAG-style pattern) - useful when new catalog items are added faster than labeled training examples accumulate for them.
 - **Explicit uncertainty weighting for the multi-task loss** (e.g. Kendall et al.'s homoscedastic uncertainty weighting, or GradNorm) instead of the fixed 0.6/0.4 split used here.
 - **A/B testing infrastructure** for champion vs. challenger models in the live serving path, not just offline evaluation.
-
-## Resume bullet points (pick what fits the format)
-
-- Designed and shipped an end-to-end ML system that classifies free-text IT service requests into 19 catalog categories (97.1% accuracy, 0.96 macro-F1) and recommends ticket priority, replacing manual service-catalog browsing; built three benchmarked approaches (retrieval, classical ML, a from-scratch multi-task neural network) and shipped the evidence-based winner.
-- Implemented a multi-task neural network from scratch in NumPy (embedding layer, shared encoder, dual softmax heads, manual backpropagation, Adam optimizer) trained with class-weighted loss, early stopping, and learning-rate decay; benchmarked against a hyperparameter-tuned classical ML pipeline to make and justify a data-driven model selection.
-- Built a confidence-thresholded serving layer with graceful fallback to top-k alternatives for out-of-distribution requests, verified via a held-out calibration analysis (100% top-3 recall on low-confidence predictions); deployed via FastAPI with an active-learning feedback loop and a schema-validated, versioned data-append/retrain pipeline with automatic champion/challenger regression gating.
