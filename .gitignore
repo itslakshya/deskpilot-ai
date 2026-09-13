@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.DS_Store
+data/v*/train.csv
+data/v*/val.csv
+data/v*/test.csv
+docs/INTERVIEW_PREP.md
+venv/

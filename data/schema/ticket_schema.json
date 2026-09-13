@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DeskPilot Ticket Record",
+  "description": "Schema every row of tickets.csv (and any future appended batch) must satisfy. Used by scripts/append_and_retrain.py to validate new data before it is merged into the training set.",
+  "type": "object",
+  "required": ["ticket_id", "query_text", "request_type", "category", "priority", "requester_role", "department", "submitted_at"],
+  "properties": {
+    "ticket_id": {
+      "type": "string",
+      "pattern": "^TCK-[A-Z0-9]{8}$",
+      "description": "Unique ticket identifier."
+    },
+    "query_text": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 500,
+      "description": "Free-text request as typed by the user. This is the primary model input."
+    },
+    "request_type": {
+      "type": "string",
+      "enum": ["Incident", "Service Request", "Change Request", "Admin"]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Network/VPN Connectivity Issue", "Application Crash or Error", "Email/Outlook Issue",
+        "Printer Not Working", "Login/Authentication Failure", "Hardware Malfunction",
+        "Software Installation Request", "Software License Request", "New Hardware/Peripheral Request",
+        "Access/Permission Request", "Password Reset", "Distribution List / Mailbox Request",
+        "VPN Access Setup", "Server Configuration Change", "Firewall/Network Change",
+        "Database Schema/Deployment Change", "Application Deployment/Release",
+        "Employee Onboarding Setup", "Employee Offboarding/Asset Return"
+      ],
+      "description": "The target label for the catalog-item classification head. NOTE: adding a brand-new category to future data requires updating this enum AND re-running training with an updated output layer size - documented in scripts/append_and_retrain.py."
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["P1-Critical", "P2-High", "P3-Medium", "P4-Low"]
+    },
+    "requester_role": {
+      "type": "string",
+      "enum": ["Associate", "Senior Associate", "Team Lead", "Manager", "Senior Manager", "Director", "VP"]
+    },
+    "department": {
+      "type": "string",
+      "description": "Free-form in this version; treated as categorical and one-hot/embedded at train time. Unseen departments at inference time fall back to an <UNK> embedding bucket."
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

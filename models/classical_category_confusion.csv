@@ -1,0 +1,20 @@
+,Network/VPN Connectivity Issue,Application Crash or Error,Email/Outlook Issue,Printer Not Working,Login/Authentication Failure,Hardware Malfunction,Software Installation Request,Software License Request,New Hardware/Peripheral Request,Access/Permission Request,Password Reset,Distribution List / Mailbox Request,VPN Access Setup,Server Configuration Change,Firewall/Network Change,Database Schema/Deployment Change,Application Deployment/Release,Employee Onboarding Setup,Employee Offboarding/Asset Return
+Network/VPN Connectivity Issue,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Application Crash or Error,0,83,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0
+Email/Outlook Issue,0,0,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Printer Not Working,0,0,0,18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Login/Authentication Failure,0,0,0,0,39,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Hardware Malfunction,0,1,0,0,0,21,0,0,1,0,0,0,0,0,0,0,0,0,0
+Software Installation Request,0,0,0,0,0,0,142,4,0,0,0,0,0,0,0,0,0,0,0
+Software License Request,0,0,0,0,0,0,9,88,0,0,0,0,0,0,0,0,0,0,0
+New Hardware/Peripheral Request,0,0,0,0,0,0,0,1,49,0,0,0,0,0,0,0,0,1,0
+Access/Permission Request,0,0,0,0,0,0,0,0,0,85,0,0,2,0,0,0,0,0,0
+Password Reset,0,0,0,0,0,0,0,0,0,0,19,0,0,0,0,0,0,0,0
+Distribution List / Mailbox Request,0,0,0,0,0,0,0,0,0,0,0,51,0,0,0,0,0,0,0
+VPN Access Setup,2,0,0,0,0,0,0,0,0,5,0,0,14,0,0,0,0,0,0
+Server Configuration Change,0,0,0,0,0,0,0,0,0,0,0,0,0,34,0,6,0,0,0
+Firewall/Network Change,0,0,0,0,0,0,0,0,0,0,0,0,0,0,52,0,0,0,0
+Database Schema/Deployment Change,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,27,0,0,0
+Application Deployment/Release,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,79,0,0
+Employee Onboarding Setup,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,28,0
+Employee Offboarding/Asset Return,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26

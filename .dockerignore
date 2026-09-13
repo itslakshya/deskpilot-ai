@@ -1,0 +1,7 @@
+data/v*/train.csv
+data/v*/val.csv
+data/v*/test.csv
+notebooks/
+__pycache__/
+*.pyc
+.git/

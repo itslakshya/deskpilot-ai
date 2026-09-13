@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeskPilot - service request router</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #14181F;
+    --panel: #1C222C;
+    --panel-line: #2A3140;
+    --paper: #EDEFF3;
+    --paper-line: #C9CDD6;
+    --text: #E4E7EC;
+    --text-dim: #8A93A3;
+    --amber: #E4A23D;
+    --teal: #4FC3B0;
+    --rose: #E2604F;
+    --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; background: var(--ink); color: var(--text);
+    font-family: var(--sans); font-size: 16px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 680px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  .console-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: 18px; margin-bottom: 30px; border-bottom: 1px solid var(--panel-line);
+    flex-wrap: wrap; gap: 8px 20px;
+  }
+  .console-header .name { font-size: 17px; font-weight: 600; letter-spacing: 0.01em; }
+  .console-header .name span { color: var(--text-dim); font-weight: 400; }
+  .console-header .stat { font-family: var(--mono); font-size: 12.5px; color: var(--text-dim); }
+  .console-header .stat b { color: var(--teal); font-weight: 500; }
+
+  h1 { font-size: 22px; font-weight: 500; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lede { color: var(--text-dim); font-size: 14.5px; margin: 0 0 22px; max-width: 52ch; }
+
+  .field-label { font-size: 13px; color: var(--text-dim); margin-bottom: 7px; display: block; }
+  textarea#query {
+    width: 100%; min-height: 84px; resize: vertical; padding: 14px 16px;
+    background: var(--panel); border: 1px solid var(--panel-line); border-radius: 6px;
+    color: var(--text); font-family: var(--sans); font-size: 15.5px; line-height: 1.45;
+  }
+  textarea#query::placeholder { color: #5B6373; }
+  textarea#query:focus-visible, select:focus-visible, button:focus-visible, .chip:focus-visible {
+    outline: 2px solid var(--teal); outline-offset: 2px;
+  }
+
+  .row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  .row .selects { display: flex; gap: 10px; flex: 1; min-width: 240px; flex-wrap: wrap; }
+  select {
+    background: var(--panel); border: 1px solid var(--panel-line); color: var(--text);
+    font-family: var(--sans); font-size: 13.5px; padding: 9px 10px; border-radius: 6px;
+    flex: 1; min-width: 140px;
+  }
+  button#submit {
+    background: var(--teal); color: #0C1613; border: none; border-radius: 6px;
+    font-family: var(--sans); font-weight: 600; font-size: 14.5px;
+    padding: 10px 20px; cursor: pointer; white-space: nowrap;
+    transition: transform 120ms ease, background 120ms ease;
+  }
+  button#submit:hover { background: #63D4C2; }
+  button#submit:active { transform: scale(0.98); }
+  button#submit:disabled { background: var(--panel-line); color: var(--text-dim); cursor: not-allowed; }
+
+  .examples { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .example-chip {
+    font-family: var(--mono); font-size: 12px; color: var(--text-dim);
+    background: transparent; border: 1px dashed var(--panel-line); border-radius: 20px;
+    padding: 5px 12px; cursor: pointer;
+  }
+  .example-chip:hover { border-color: var(--teal); color: var(--teal); }
+
+  .tear {
+    margin: 34px 0 0; border: none; border-top: 1.5px dashed var(--panel-line); position: relative;
+  }
+  .tear::before, .tear::after {
+    content: ""; position: absolute; top: -8px; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--ink);
+  }
+  .tear::before { left: -28px; } .tear::after { right: -28px; }
+
+  #result { margin-top: 26px; }
+  .hidden { display: none !important; }
+
+  .stub {
+    background: var(--paper); color: #1B1E24; border-radius: 4px; padding: 22px 24px 20px;
+    position: relative; box-shadow: 0 12px 30px -12px rgba(0,0,0,0.55);
+    animation: rise 320ms ease;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .stub { animation: none; } }
+
+  .stub-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .stub-id { font-family: var(--mono); font-size: 12px; color: #6B7280; }
+  .stub-type { font-family: var(--mono); font-size: 11px; color: #6B7280; text-align: right; }
+  .stub-category { font-size: 19px; font-weight: 600; margin: 10px 0 2px; line-height: 1.3; }
+  .stub-query { font-size: 13px; color: #5B6270; font-style: italic; margin-bottom: 16px; }
+
+  .confidence-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .conf-track { flex: 1; height: 6px; background: var(--paper-line); border-radius: 3px; overflow: hidden; }
+  .conf-fill { height: 100%; background: var(--teal); border-radius: 3px; transition: width 420ms ease; }
+  .conf-label { font-family: var(--mono); font-size: 12.5px; color: #4B525E; white-space: nowrap; }
+
+  .priority-pill {
+    display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono);
+    font-size: 12.5px; padding: 5px 10px; border-radius: 20px; border: 1px solid;
+  }
+  .pri-critical { color: var(--rose); border-color: var(--rose); background: rgba(226,96,79,0.08); }
+  .pri-high { color: #C97A1F; border-color: var(--amber); background: rgba(228,162,61,0.1); }
+  .pri-medium { color: #8A7A2E; border-color: #B4A34A; background: rgba(180,163,74,0.08); }
+  .pri-low { color: #2E8A79; border-color: var(--teal); background: rgba(79,195,176,0.08); }
+
+  .stub::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 10px;
+    background: radial-gradient(circle at 8px 0, transparent 8px, var(--paper) 8.5px) repeat-x;
+    background-size: 16px 10px; transform: translateY(50%);
+  }
+
+  .fallback-box {
+    background: var(--panel); border: 1px solid #4A3A26; border-left: 3px solid var(--amber);
+    border-radius: 4px; padding: 18px 20px;
+  }
+  .fallback-box .msg { font-size: 14px; color: var(--text); margin-bottom: 14px; }
+  .fallback-box .msg b { color: var(--amber); }
+  .alt-list { display: flex; flex-direction: column; gap: 8px; }
+  .alt-chip {
+    text-align: left; background: var(--ink); border: 1px solid var(--panel-line); border-radius: 6px;
+    color: var(--text); font-family: var(--sans); font-size: 14px; padding: 10px 14px;
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  }
+  .alt-chip:hover { border-color: var(--amber); }
+  .alt-chip .pct { font-family: var(--mono); color: var(--text-dim); font-size: 12.5px; }
+  .browse-link {
+    display: inline-block; margin-top: 14px; font-size: 13px; color: var(--text-dim);
+    text-decoration: underline; text-decoration-color: var(--panel-line); cursor: pointer; background: none; border: none; padding: 0; font-family: var(--sans);
+  }
+  .browse-link:hover { color: var(--text); }
+
+  details.why { margin-top: 16px; }
+  details.why summary {
+    cursor: pointer; font-size: 13px; color: var(--text-dim); list-style: none;
+    display: flex; align-items: center; gap: 6px;
+  }
+  details.why summary::-webkit-details-marker { display: none; }
+  details.why summary::before { content: "\25B8"; font-size: 10px; transition: transform 150ms; }
+  details.why[open] summary::before { transform: rotate(90deg); }
+  .why-body {
+    margin-top: 10px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--panel-line);
+    border-radius: 6px; font-size: 13px;
+  }
+  .why-body p { margin: 0 0 10px; color: var(--text-dim); }
+  .term-row { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12.5px; padding: 3px 0; }
+  .term-row .term { color: var(--text); }
+  .term-row .weight { color: var(--teal); }
+
+  .foot-note { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--panel-line); font-size: 12.5px; color: var(--text-dim); }
+  .foot-note a { color: var(--text-dim); }
+
+  @media (max-width: 480px) {
+    .row { flex-direction: column; align-items: stretch; }
+    button#submit { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="console-header">
+    <div class="name">DeskPilot <span>/ service request router</span></div>
+    <div class="stat">19 categories&nbsp;&nbsp;<b>96.2%</b> macro-F1 on held-out test set</div>
+  </div>
+
+  <h1>What do you need help with?</h1>
+  <p class="lede">Type a request the way you'd say it to a colleague. This replaces browsing a 100+ item service catalog by hand - the model reads your text and routes it to the right catalog item, live, in your browser.</p>
+
+  <label class="field-label" for="query">Your request</label>
+  <textarea id="query" placeholder="e.g. need Adobe Photoshop installed on my laptop for the design project"></textarea>
+
+  <div class="row">
+    <div class="selects">
+      <select id="department" aria-label="Department"></select>
+      <select id="role" aria-label="Role"></select>
+    </div>
+    <button id="submit">Route request</button>
+  </div>
+
+  <div class="examples" id="examples"></div>
+
+  <hr class="tear" />
+
+  <div id="result"></div>
+
+  <div class="foot-note">
+    Running entirely client-side on exported TF-IDF + logistic regression weights (the same model served in production). The full system also includes a from-scratch multi-task neural network, a FastAPI backend with an active-learning feedback loop, and a data-versioned retraining pipeline - see the repo README.
+  </div>
+</div>
+
+<script>
+const MODEL = __MODEL_DATA__;
+
+const DEPARTMENTS = ["Finance","HR","Engineering","Data Science","Marketing","Sales","Legal","Procurement","Customer Support","DevOps","QA","Design"];
+const ROLES = ["Associate","Senior Associate","Team Lead","Manager","Senior Manager","Director","VP"];
+const EXAMPLES = [
+  "need Adobe Photoshop installed on my laptop",
+  "vpn keeps disconnecting during client calls, blocking my work",
+  "my thing isn't working can someone help",
+  "RFC to patch OS on staging server this weekend"
+];
+const CONFIDENCE_THRESHOLD = 0.45;
+
+const deptSel = document.getElementById('department');
+const roleSel = document.getElementById('role');
+DEPARTMENTS.forEach(d => deptSel.add(new Option(d, d)));
+ROLES.forEach(r => roleSel.add(new Option(r, r)));
+deptSel.value = "Engineering"; roleSel.value = "Associate";
+
+const examplesEl = document.getElementById('examples');
+EXAMPLES.forEach(ex => {
+  const b = document.createElement('button');
+  b.className = 'example-chip'; b.type = 'button'; b.textContent = '"' + ex + '"';
+  b.onclick = () => { document.getElementById('query').value = ex; runPrediction(); };
+  examplesEl.appendChild(b);
+});
+
+function cleanText(text) {
+  text = text.toLowerCase().trim();
+  text = text.replace(/[^a-z0-9./\-\s']/g, ' ');
+  text = text.replace(/\s+/g, ' ').trim();
+  return text;
+}
+function tokenize(text) {
+  return text.match(/[a-z0-9_]{2,}/g) || [];
+}
+function tfidfVector(text, vocab, idf) {
+  const toks = tokenize(text);
+  const grams = toks.slice();
+  for (let i = 0; i < toks.length - 1; i++) grams.push(toks[i] + ' ' + toks[i+1]);
+  const counts = {};
+  grams.forEach(g => { counts[g] = (counts[g] || 0) + 1; });
+  const raw = {};
+  for (const g in counts) {
+    if (g in vocab) {
+      const idx = vocab[g];
+      raw[idx] = (1 + Math.log(counts[g])) * idf[idx];
+    }
+  }
+  let norm = 0;
+  for (const k in raw) norm += raw[k] * raw[k];
+  norm = Math.sqrt(norm);
+  if (norm > 0) for (const k in raw) raw[k] /= norm;
+  return raw;
+}
+function softmax(logits) {
+  const m = Math.max(...logits);
+  const exps = logits.map(l => Math.exp(l - m));
+  const tot = exps.reduce((a,b) => a+b, 0);
+  return exps.map(e => e / tot);
+}
+function dotSparse(vec, coefRow) {
+  let s = 0;
+  for (const idx in vec) s += vec[idx] * coefRow[idx];
+  return s;
+}
+
+function predictCategory(text) {
+  const cm = MODEL.category_model;
+  const vec = tfidfVector(cleanText(text), cm.vocabulary, cm.idf);
+  const logits = cm.coef.map((row, c) => cm.intercept[c] + dotSparse(vec, row));
+  const probs = softmax(logits);
+  const order = probs.map((p,i) => [p,i]).sort((a,b) => b[0]-a[0]);
+  return { vec, ranked: order.map(([p,i]) => ({ category: cm.classes[i], confidence: p })) };
+}
+
+function predictPriority(text, dept, role, predCategory) {
+  const pm = MODEL.priority_model;
+  const vec = tfidfVector(cleanText(text), pm.vocabulary, pm.idf);
+  const nT = pm.n_tfidf_features;
+  const fused = Object.assign({}, vec);
+  const di = pm.dept_categories.indexOf(dept);
+  if (di >= 0) fused[nT + di] = 1.0;
+  const roleOff = nT + pm.dept_categories.length;
+  const ri = pm.role_categories.indexOf(role);
+  if (ri >= 0) fused[roleOff + ri] = 1.0;
+  const catOff = roleOff + pm.role_categories.length;
+  const ci = pm.predcat_categories.indexOf(predCategory);
+  if (ci >= 0) fused[catOff + ci] = 1.0;
+  const logits = pm.coef.map((row, c) => pm.intercept[c] + dotSparse(fused, row));
+  const probs = softmax(logits);
+  const order = probs.map((p,i) => [p,i]).sort((a,b) => b[0]-a[0]);
+  return order.map(([p,i]) => ({ priority: pm.classes[i], confidence: p }));
+}
+
+function priorityClass(p) {
+  if (p.startsWith('P1')) return 'pri-critical';
+  if (p.startsWith('P2')) return 'pri-high';
+  if (p.startsWith('P3')) return 'pri-medium';
+  return 'pri-low';
+}
+function priorityLabel(p) {
+  return p.replace('-', ': ');
+}
+
+function topTerms(vec, coefRow, vocab, n) {
+  const inv = {};
+  for (const term in vocab) inv[vocab[term]] = term;
+  const contribs = [];
+  for (const idx in vec) contribs.push({ term: inv[idx], weight: vec[idx] * coefRow[idx] });
+  contribs.sort((a,b) => b.weight - a.weight);
+  return contribs.slice(0, n).filter(c => c.weight > 0);
+}
+
+function renderConfident(query, top, allRanked, dept, role) {
+  const priRanked = predictPriority(query, dept, role, top.category);
+  const topPri = priRanked[0];
+  const ticketId = 'TCK-' + Math.random().toString(16).slice(2,10).toUpperCase();
+  const cm = MODEL.category_model;
+  const clfIdx = cm.classes.indexOf(top.category);
+  const terms = topTerms(predictCategory(query).vec, cm.coef[clfIdx], cm.vocabulary, 5);
+
+  return `
+    <div class="stub">
+      <div class="stub-top">
+        <div class="stub-id">#${ticketId}</div>
+        <div class="stub-type">SERVICE DESK<br/>RECOMMENDATION</div>
+      </div>
+      <div class="stub-category">${top.category}</div>
+      <div class="stub-query">"${query}"</div>
+      <div class="confidence-row">
+        <div class="conf-track"><div class="conf-fill" style="width:${Math.round(top.confidence*100)}%"></div></div>
+        <div class="conf-label">${Math.round(top.confidence*100)}% confident</div>
+      </div>
+      <span class="priority-pill ${priorityClass(topPri.priority)}">${priorityLabel(topPri.priority)} priority (${Math.round(topPri.confidence*100)}%)</span>
+    </div>
+    <details class="why">
+      <summary>How the model decided this</summary>
+      <div class="why-body">
+        <p>Top contributing terms from your request (TF-IDF weight x learned coefficient for "${top.category}"):</p>
+        ${terms.map(t => `<div class="term-row"><span class="term">${t.term}</span><span class="weight">+${t.weight.toFixed(3)}</span></div>`).join('') || '<div class="term-row"><span class="term">(no strong single-term signal - broad match)</span></div>'}
+      </div>
+    </details>`;
+}
+
+function renderFallback(query, ranked) {
+  const top3 = ranked.slice(0, 3);
+  return `
+    <div class="fallback-box">
+      <div class="msg"><b>Not fully sure</b> - "${query}" doesn't closely match one catalog item. Pick the closest one, or browse the catalog yourself.</div>
+      <div class="alt-list">
+        ${top3.map(a => `<button class="alt-chip" data-cat="${a.category}">
+            <span>${a.category}</span><span class="pct">${Math.round(a.confidence*100)}%</span>
+          </button>`).join('')}
+      </div>
+      <button class="browse-link" id="browse-btn" type="button">None of these - browse full catalog instead</button>
+    </div>`;
+}
+
+function runPrediction() {
+  const query = document.getElementById('query').value.trim();
+  const resultEl = document.getElementById('result');
+  if (!query || query.length < 3) {
+    resultEl.innerHTML = `<p style="color:var(--text-dim); font-size:13px;">Type a request above (at least a few words) to get a recommendation.</p>`;
+    return;
+  }
+  const dept = deptSel.value, role = roleSel.value;
+  const { vec, ranked } = predictCategory(query);
+  const top = ranked[0];
+
+  if (top.confidence < CONFIDENCE_THRESHOLD) {
+    resultEl.innerHTML = renderFallback(query, ranked);
+    resultEl.querySelectorAll('.alt-chip').forEach(btn => {
+      btn.onclick = () => {
+        const chosen = btn.getAttribute('data-cat');
+        resultEl.innerHTML = renderConfident(query, { category: chosen, confidence: ranked.find(r => r.category === chosen).confidence }, ranked, dept, role);
+      };
+    });
+    document.getElementById('browse-btn').onclick = () => {
+      resultEl.innerHTML += `<p style="color:var(--text-dim); font-size:13px; margin-top:10px;">Catalog browsing isn't wired up in this demo - in production this would open the full service catalog tree.</p>`;
+    };
+  } else {
+    resultEl.innerHTML = renderConfident(query, top, ranked, dept, role);
+  }
+}
+
+document.getElementById('submit').addEventListener('click', runPrediction);
+document.getElementById('query').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runPrediction(); }
+});
+</script>
+</body>
+</html>

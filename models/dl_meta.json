@@ -1,0 +1,60 @@
+{
+  "dept_list": [
+    "Customer Support",
+    "Data Science",
+    "Design",
+    "DevOps",
+    "Engineering",
+    "Finance",
+    "HR",
+    "Legal",
+    "Marketing",
+    "Procurement",
+    "QA",
+    "Sales"
+  ],
+  "role_list": [
+    "Associate",
+    "Senior Associate",
+    "Team Lead",
+    "Manager",
+    "Senior Manager",
+    "Director",
+    "VP"
+  ],
+  "cat_classes": [
+    "Network/VPN Connectivity Issue",
+    "Application Crash or Error",
+    "Email/Outlook Issue",
+    "Printer Not Working",
+    "Login/Authentication Failure",
+    "Hardware Malfunction",
+    "Software Installation Request",
+    "Software License Request",
+    "New Hardware/Peripheral Request",
+    "Access/Permission Request",
+    "Password Reset",
+    "Distribution List / Mailbox Request",
+    "VPN Access Setup",
+    "Server Configuration Change",
+    "Firewall/Network Change",
+    "Database Schema/Deployment Change",
+    "Application Deployment/Release",
+    "Employee Onboarding Setup",
+    "Employee Offboarding/Asset Return"
+  ],
+  "priority_classes": [
+    "P1-Critical",
+    "P2-High",
+    "P3-Medium",
+    "P4-Low"
+  ],
+  "max_len": 24,
+  "embed_dim": 64,
+  "hidden1": 128,
+  "hidden2": 64,
+  "best_epoch": 7,
+  "total_epochs_run": 13,
+  "train_seconds": 8.0,
+  "n_params": 63703
+}

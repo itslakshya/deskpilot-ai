@@ -1,0 +1,39 @@
+{
+  "threshold": 0.45,
+  "buckets": [
+    {
+      "confidence_range": "[0.00, 0.30)",
+      "n": 4,
+      "pct_of_test_set": 0.4,
+      "top1_accuracy": 0.25
+    },
+    {
+      "confidence_range": "[0.30, 0.45)",
+      "n": 10,
+      "pct_of_test_set": 1.0,
+      "top1_accuracy": 0.9
+    },
+    {
+      "confidence_range": "[0.45, 0.60)",
+      "n": 25,
+      "pct_of_test_set": 2.6,
+      "top1_accuracy": 0.92
+    },
+    {
+      "confidence_range": "[0.60, 0.80)",
+      "n": 335,
+      "pct_of_test_set": 35.0,
+      "top1_accuracy": 0.961
+    },
+    {
+      "confidence_range": "[0.80, 1.01)",
+      "n": 584,
+      "pct_of_test_set": 61.0,
+      "top1_accuracy": 0.969
+    }
+  ],
+  "low_confidence_pct": 0.0146,
+  "low_confidence_top1_acc": 0.7143,
+  "low_confidence_top3_recall": 0.9286,
+  "high_confidence_top1_acc": 0.965
+}

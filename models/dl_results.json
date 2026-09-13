@@ -1,0 +1,15 @@
+{
+  "best_epoch": 7,
+  "total_epochs_run": 13,
+  "train_seconds": 8.0,
+  "test_category": {
+    "accuracy": 0.9593,
+    "macro_f1": 0.951,
+    "weighted_f1": 0.9587
+  },
+  "test_priority": {
+    "accuracy": 0.5376,
+    "macro_f1": 0.5081,
+    "weighted_f1": 0.5271
+  }
+}

@@ -1,0 +1,17 @@
+# core ML
+numpy>=1.26
+pandas>=2.0
+scikit-learn>=1.4
+scipy>=1.11
+joblib>=1.3
+
+# data generation (dev-time only)
+Faker>=24.0
+
+# serving
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+
+# plots (dev-time only, for docs/*.png)
+matplotlib>=3.8

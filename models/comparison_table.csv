@@ -1,0 +1,6 @@
+approach,task,test_accuracy,test_macro_f1,params_or_notes
+Retrieval (TF-IDF centroid cosine-sim),category,0.9353,0.9307,0 trainable params - just corpus statistics
+Classical ML (tuned Logistic Regression),category,0.9614,0.9562,"~54K coefficients, grid-searched C"
+Deep Learning (multi-task NumPy net),category,0.9593,0.951,"63,639 params, 13 epochs (best=7)"
+"Classical ML (tuned Logistic Regression, cascade)",priority,0.548,0.5145,text + department + role + predicted category
+"Deep Learning (multi-task NumPy net, joint)",priority,0.5376,0.5081,"shared representation, joint loss"
